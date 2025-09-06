@@ -1,0 +1,12 @@
+{
+    "console_print": {
+        "description": "是否在控制台打印调试信息",
+        "type": "bool",
+        "default": true
+    },
+    "message_reply": {
+        "description": "是否在消息平台回复调试信息",
+        "type": "bool",
+        "default": true
+    }
+}

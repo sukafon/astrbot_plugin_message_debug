@@ -1,0 +1,5 @@
+name: MessageDebug # 这是你的插件的唯一识别名。
+desc: 消息平台内直接 /debug 消息链，支持 /debug 后发送一条消息或者直接引用回复。 # 插件简短描述
+version: v1.0.0 # 插件版本号。格式：v1.1.1 或者 v1.1
+author: Sukafon # 作者
+repo: https://github.com/sukafon/astrbot_plugin_message_debug # 插件的仓库地址
