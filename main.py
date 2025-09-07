@@ -1,3 +1,4 @@
+import json
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger, AstrBotConfig
@@ -7,7 +8,10 @@ from astrbot.core.message.message_event_result import MessageEventResult
 
 
 @register(
-    "message_debug", "Sukafon", "一个简单的 debug 插件，你可以自由修改需要打印的信息", "1.0.0"
+    "message_debug",
+    "Sukafon",
+    "一个简单的 debug 插件，你可以自由修改需要打印的信息",
+    "1.0.0",
 )
 class MessageDebug(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
@@ -57,7 +61,7 @@ class MessageDebug(Star):
 
     def _create_debug_response(
         self, event: AstrMessageEvent, chain_to_debug: list, title: str
-    ) -> MessageEventResult|None:
+    ) -> MessageEventResult | None:
         """
         辅助函数：根据给定的消息链创建用于调试的响应消息。
         它会格式化消息链、打印日志，并根据平台类型构建不同的消息格式。
@@ -81,11 +85,16 @@ class MessageDebug(Star):
             if event.platform_meta.name == "aiocqhttp":
                 from astrbot.api.message_components import Node, Nodes, Plain
 
+                # 把对象转换成字典
+                chain_dict = [vars(c) for c in chain_to_debug]
+                # 把字典格式化成字符串
+                chain_json = json.dumps(chain_dict, indent=4, ensure_ascii=False)
+                # 构造转发消息
                 nodes = [
                     Node(
                         uin=event.get_sender_id(),
                         name=event.get_sender_name(),
-                        content=[Plain(title)],
+                        content=[Plain(title + " -> Prettier String")],
                     ),
                     Node(
                         uin=event.get_sender_id(),
@@ -95,7 +104,21 @@ class MessageDebug(Star):
                     Node(
                         uin=event.get_sender_id(),
                         name=event.get_sender_name(),
-                        content=[Plain("# event.message_obj.raw_message: Object -> Prettier-String")],
+                        content=[Plain(title + " -> JSON String")],
+                    ),
+                    Node(
+                        uin=event.get_sender_id(),
+                        name=event.get_sender_name(),
+                        content=[Plain(chain_json)],
+                    ),
+                    Node(
+                        uin=event.get_sender_id(),
+                        name=event.get_sender_name(),
+                        content=[
+                            Plain(
+                                "# event.message_obj.raw_message: Object -> Prettier String"
+                            )
+                        ],
                     ),
                     Node(
                         uin=event.get_sender_id(),
@@ -118,7 +141,7 @@ class MessageDebug(Star):
 
         # 分支 1: 如果是回复消息，直接处理被回复的内容
         if reply_component:
-            title = "# Reply in event.get_messages(): List[BaseMessageComponent] -> Prettier-String"
+            title = "# Reply in event.get_messages(): List[BaseMessageComponent] -> Prettier String"
             response_message = self._create_debug_response(
                 event, reply_component.chain, title
             )
@@ -129,11 +152,9 @@ class MessageDebug(Star):
         yield event.plain_result("请在 60 秒内发送一条消息~")
 
         @session_waiter(timeout=60, record_history_chains=False)
-        async def waiter(
-            controller: SessionController, new_event: AstrMessageEvent
-        ):
+        async def waiter(controller: SessionController, new_event: AstrMessageEvent):
             title = (
-                "# event.get_messages(): List[BaseMessageComponent] -> Prettier-String"
+                "# event.get_messages(): List[BaseMessageComponent]"
             )
             response_message = self._create_debug_response(
                 new_event, new_event.get_messages(), title
