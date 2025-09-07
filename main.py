@@ -59,6 +59,17 @@ class MessageDebug(Star):
             case _:
                 return repr(obj)
 
+    # 更深层次的递归序列化，避免简单 vars() 导致子对象未展开或异步 to_dict 被忽略
+    def deep_vars(self, obj):
+        if isinstance(obj, list):
+            return [self.deep_vars(o) for o in obj]
+        elif isinstance(obj, dict):
+            return {k: self.deep_vars(v) for k, v in obj.items()}
+        elif hasattr(obj, "__dict__"):
+            return {k: self.deep_vars(v) for k, v in vars(obj).items()}
+        else:
+            return obj
+
     def _create_debug_response(
         self, event: AstrMessageEvent, chain_to_debug: list, title: str
     ) -> MessageEventResult | None:
@@ -85,8 +96,8 @@ class MessageDebug(Star):
             if event.platform_meta.name == "aiocqhttp":
                 from astrbot.api.message_components import Node, Nodes, Plain
 
-                # 把对象转换成字典
-                chain_dict = [vars(c) for c in chain_to_debug]
+                # 把对象转换成深序列化的字典
+                chain_dict = self.deep_vars(chain_to_debug)
                 # 把字典格式化成字符串
                 chain_json = json.dumps(chain_dict, indent=4, ensure_ascii=False)
                 # 构造转发消息
@@ -123,7 +134,15 @@ class MessageDebug(Star):
                     Node(
                         uin=event.get_sender_id(),
                         name=event.get_sender_name(),
-                        content=[Plain(json.dumps(event.message_obj.raw_message, indent=4, ensure_ascii=False))],
+                        content=[
+                            Plain(
+                                json.dumps(
+                                    event.message_obj.raw_message,
+                                    indent=4,
+                                    ensure_ascii=False,
+                                )
+                            )
+                        ],
                     ),
                 ]
                 return event.chain_result([Nodes(nodes)])
@@ -153,9 +172,7 @@ class MessageDebug(Star):
 
         @session_waiter(timeout=60, record_history_chains=False)
         async def waiter(controller: SessionController, new_event: AstrMessageEvent):
-            title = (
-                "# event.get_messages(): List[BaseMessageComponent]"
-            )
+            title = "# event.get_messages(): List[BaseMessageComponent]"
             response_message = self._create_debug_response(
                 new_event, new_event.get_messages(), title
             )
