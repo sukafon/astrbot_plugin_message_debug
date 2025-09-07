@@ -1,4 +1,5 @@
 import json
+import enum
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger, AstrBotConfig
@@ -61,14 +62,17 @@ class MessageDebug(Star):
 
     # 更深层次的递归序列化，避免简单 vars() 导致子对象未展开或异步 to_dict 被忽略
     def deep_vars(self, obj):
-        if isinstance(obj, list):
-            return [self.deep_vars(o) for o in obj]
-        elif isinstance(obj, dict):
-            return {k: self.deep_vars(v) for k, v in obj.items()}
-        elif hasattr(obj, "__dict__"):
-            return {k: self.deep_vars(v) for k, v in vars(obj).items()}
-        else:
-            return obj
+        match obj:
+            case list():
+                return [self.deep_vars(o) for o in obj]
+            case dict():
+                return {k: self.deep_vars(v) for k, v in obj.items()}
+            case enum.Enum():
+                return repr(obj)
+            case _ if hasattr(obj, "__dict__"):
+                return {k: self.deep_vars(v) for k, v in obj.__dict__.items()}
+            case _:
+                return obj
 
     def _create_debug_response(
         self, event: AstrMessageEvent, chain_to_debug: list, title: str
