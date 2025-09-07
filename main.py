@@ -123,7 +123,7 @@ class MessageDebug(Star):
                     Node(
                         uin=event.get_sender_id(),
                         name=event.get_sender_name(),
-                        content=[Plain(self.format_obj(event.message_obj.raw_message))],
+                        content=[Plain(json.dumps(event.message_obj.raw_message, indent=4, ensure_ascii=False))],
                     ),
                 ]
                 return event.chain_result([Nodes(nodes)])
