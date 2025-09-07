@@ -141,7 +141,7 @@ class MessageDebug(Star):
 
         # 分支 1: 如果是回复消息，直接处理被回复的内容
         if reply_component:
-            title = "# Reply in event.get_messages(): List[BaseMessageComponent] -> Prettier String"
+            title = "# Reply in event.get_messages(): List[BaseMessageComponent]"
             response_message = self._create_debug_response(
                 event, reply_component.chain, title
             )
